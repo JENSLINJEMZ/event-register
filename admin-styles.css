@@ -1126,7 +1126,7 @@ body {
 }
 
 .management-btn {
-    background: var(--admin-bg-secondary);
+    background: gray;
     border: 1px solid var(--admin-border);
     border-radius: 15px;
     padding: 25px;
