@@ -1,10 +1,15 @@
-// Admin Dashboard JavaScript with Complete Dummy Data Support
+// Admin Dashboard JavaScript with Fixed Analytics
 
 // Authentication
 const AUTH_CREDENTIALS = {
     username: 'admin',
     password: 'tecnospark2024'
 };
+
+// Chart instances stored globally
+let registrationChart, eventChart, collegeChart, revenueChart, yearChart, miniChart;
+let analyticsChartsInitialized = false;
+let currentActiveSection = 'dashboard';
 
 // Generate dummy data if none exists
 function generateDummyData() {
@@ -183,9 +188,39 @@ function showDashboard() {
 
 // Logout functionality
 function logout() {
+    // Destroy all charts before logout
+    destroyAllCharts();
     sessionStorage.removeItem('adminAuthenticated');
     sessionStorage.removeItem('adminUser');
     location.reload();
+}
+
+// Destroy all charts
+function destroyAllCharts() {
+    if (registrationChart) {
+        registrationChart.destroy();
+        registrationChart = null;
+    }
+    if (eventChart) {
+        eventChart.destroy();
+        eventChart = null;
+    }
+    if (collegeChart) {
+        collegeChart.destroy();
+        collegeChart = null;
+    }
+    if (revenueChart) {
+        revenueChart.destroy();
+        revenueChart = null;
+    }
+    if (yearChart) {
+        yearChart.destroy();
+        yearChart = null;
+    }
+    if (miniChart) {
+        miniChart.destroy();
+        miniChart = null;
+    }
 }
 
 // Navigation
@@ -197,6 +232,14 @@ function setupNavigation() {
         item.addEventListener('click', (e) => {
             e.preventDefault();
             
+            // Get section name
+            const sectionName = item.dataset.section;
+            
+            // Skip if already on the same section
+            if (currentActiveSection === sectionName) {
+                return;
+            }
+            
             // Remove active class from all
             navItems.forEach(nav => nav.classList.remove('active'));
             sections.forEach(section => section.classList.remove('active'));
@@ -205,19 +248,25 @@ function setupNavigation() {
             item.classList.add('active');
             
             // Show corresponding section
-            const sectionId = item.dataset.section + 'Section';
+            const sectionId = sectionName + 'Section';
             const section = document.getElementById(sectionId);
             if (section) {
                 section.classList.add('active');
+                currentActiveSection = sectionName;
                 
                 // Update page title
                 updatePageTitle(item.querySelector('span').textContent);
                 
                 // Load section specific data
-                if (sectionId === 'paymentsSection') {
+                if (sectionName === 'analytics' && !analyticsChartsInitialized) {
+                    // Only initialize analytics charts once
+                    setTimeout(() => {
+                        const registrations = JSON.parse(localStorage.getItem('tecnoSparkRegistrations') || '[]');
+                        initializeAnalyticsCharts(registrations);
+                        analyticsChartsInitialized = true;
+                    }, 100);
+                } else if (sectionName === 'payments') {
                     updatePaymentTransactions();
-                } else if (sectionId === 'analyticsSection') {
-                    updateAnalytics(JSON.parse(localStorage.getItem('tecnoSparkRegistrations') || '[]'));
                 }
             }
         });
@@ -259,11 +308,11 @@ async function loadDashboardData() {
         
         // Update all dashboard components
         updateDashboardStats(registrations);
-        updateCharts(registrations);
+        updateDashboardCharts(registrations);
         updateActivityTimeline(registrations);
         updateRegistrationsTable(registrations);
         updateEventStats(registrations);
-        updateAnalytics(registrations);
+        updateAnalyticsData(registrations);
         updatePaymentTransactions();
         
         // Create mini chart after a delay
@@ -286,16 +335,20 @@ async function loadDashboardData() {
 // Update Dashboard Stats
 function updateDashboardStats(registrations) {
     // Total registrations
-    document.getElementById('totalRegistrations').textContent = registrations.length;
-    document.getElementById('regCount').textContent = registrations.length;
+    const totalRegElement = document.getElementById('totalRegistrations');
+    const regCountElement = document.getElementById('regCount');
+    if (totalRegElement) totalRegElement.textContent = registrations.length;
+    if (regCountElement) regCountElement.textContent = registrations.length;
     
     // Total revenue
     const totalRevenue = registrations.reduce((sum, reg) => sum + (reg.totalAmount || 0), 0);
-    document.getElementById('totalRevenue').textContent = totalRevenue.toLocaleString();
+    const revenueElement = document.getElementById('totalRevenue');
+    if (revenueElement) revenueElement.textContent = totalRevenue.toLocaleString();
     
     // Total colleges
     const colleges = [...new Set(registrations.map(reg => reg.college))];
-    document.getElementById('totalColleges').textContent = colleges.length;
+    const collegesElement = document.getElementById('totalColleges');
+    if (collegesElement) collegesElement.textContent = colleges.length;
     
     // Top colleges
     const collegeCount = {};
@@ -309,20 +362,21 @@ function updateDashboardStats(registrations) {
         .map(([college, count]) => `${college} (${count})`)
         .join('<br>');
     
-    document.getElementById('topColleges').innerHTML = topColleges || 'No data yet';
+    const topCollegesElement = document.getElementById('topColleges');
+    if (topCollegesElement) topCollegesElement.innerHTML = topColleges || 'No data yet';
 }
 
-// Charts
-let registrationChart, eventChart, collegeChart, revenueChart, yearChart;
-
-function updateCharts(registrations) {
-    // Destroy existing charts
-    if (registrationChart) registrationChart.destroy();
-    if (eventChart) eventChart.destroy();
-    
+// Update Dashboard Charts Only
+function updateDashboardCharts(registrations) {
     // Registration trend chart
     const ctx1 = document.getElementById('registrationChart');
     if (ctx1) {
+        // Destroy existing chart
+        if (registrationChart) {
+            registrationChart.destroy();
+            registrationChart = null;
+        }
+        
         const last7Days = getLast7DaysData(registrations);
         
         registrationChart = new Chart(ctx1.getContext('2d'), {
@@ -364,6 +418,12 @@ function updateCharts(registrations) {
     // Event distribution chart
     const ctx2 = document.getElementById('eventChart');
     if (ctx2) {
+        // Destroy existing chart
+        if (eventChart) {
+            eventChart.destroy();
+            eventChart = null;
+        }
+        
         const eventData = getEventDistribution(registrations);
         
         eventChart = new Chart(ctx2.getContext('2d'), {
@@ -392,6 +452,133 @@ function updateCharts(registrations) {
         });
     }
 }
+
+// Initialize Analytics Charts Only Once
+function initializeAnalyticsCharts(registrations) {
+    // College chart
+    const ctx3 = document.getElementById('collegeChart');
+    if (ctx3) {
+        const collegeData = getTopCollegesData(registrations);
+        
+        collegeChart = new Chart(ctx3.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: collegeData.labels.slice(0, 5),
+                datasets: [{
+                    label: 'Students',
+                    data: collegeData.data.slice(0, 5),
+                    backgroundColor: '#00F5FF',
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#B8B8B8' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#B8B8B8' }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Revenue chart
+    const ctx4 = document.getElementById('revenueChart');
+    if (ctx4) {
+        const revenueData = getDailyRevenueData(registrations);
+        
+        revenueChart = new Chart(ctx4.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: revenueData.labels,
+                datasets: [{
+                    label: 'Revenue (₹)',
+                    data: revenueData.data,
+                    borderColor: '#00FF88',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointBackgroundColor: '#00FF88',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: {
+                            color: '#B8B8B8',
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString();
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#B8B8B8' }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Year-wise distribution
+    const ctx5 = document.getElementById('yearChart');
+    if (ctx5) {
+        const yearData = getYearWiseData(registrations);
+        
+        yearChart = new Chart(ctx5.getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: yearData.labels,
+                datasets: [{
+                    data: yearData.data,
+                    backgroundColor: ['#FF3366', '#00FF88', '#3366FF', '#FFB800', '#7B2FFF'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#B8B8B8',
+                            padding: 20
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Update Analytics Data Without Charts
+function updateAnalyticsData(registrations) {
+    // Update payment stats
+    updatePaymentStats(registrations);
+    
+    // Update department list
+    updateDepartmentList(registrations);
+}
+
 // Get last 7 days data
 function getLast7DaysData(registrations) {
     const days = [];
@@ -566,7 +753,7 @@ function updatePagination() {
     const showingTo = document.getElementById('showingTo');
     const totalRecords = document.getElementById('totalRecords');
     
-    if (showingFrom) showingFrom.textContent = Math.min(((currentPage - 1) * recordsPerPage) + 1, filteredRegistrations.length);
+    if (showingFrom) showingFrom.textContent = Math.min(((currentPage - 1) * recordsPerPage) + 1, filteredRegistrations.length) || 0;
     if (showingTo) showingTo.textContent = Math.min(currentPage * recordsPerPage, filteredRegistrations.length);
     if (totalRecords) totalRecords.textContent = filteredRegistrations.length;
     
@@ -668,6 +855,8 @@ function setupEventListeners() {
             icon.style.animation = 'spin 1s linear';
             
             setTimeout(() => {
+                // Reset analytics flag to allow refresh
+                analyticsChartsInitialized = false;
                 loadDashboardData();
                 icon.style.animation = '';
                 showNotification('Data refreshed successfully', 'success');
@@ -692,6 +881,19 @@ function setupEventListeners() {
                 if (results.length > 0) {
                     showNotification(`Found ${results.length} results for "${searchTerm}"`, 'info');
                 }
+            }
+        });
+    }
+    
+    // Date range picker
+    const applyDateBtn = document.querySelector('.apply-date');
+    if (applyDateBtn) {
+        applyDateBtn.addEventListener('click', () => {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (startDate && endDate) {
+                showNotification(`Analytics updated for ${startDate} to ${endDate}`, 'success');
             }
         });
     }
@@ -805,6 +1007,8 @@ function deleteRegistration(regId) {
         localStorage.setItem('tecnoSparkRegistrations', JSON.stringify(registrations));
         
         showNotification('Registration deleted successfully', 'success');
+        // Reset analytics flag
+        analyticsChartsInitialized = false;
         loadDashboardData();
     }
 }
@@ -826,7 +1030,7 @@ function exportToCSV() {
         reg.year,
         reg.department,
         reg.events.join('; '),
-        reg.totalAmount,
+                reg.totalAmount,
         reg.paymentMethod,
         new Date(reg.timestamp).toLocaleString()
     ]);
@@ -891,134 +1095,6 @@ function updateEventStats(registrations) {
     if (debuggerRevenue) debuggerRevenue.textContent = (eventCounts['debugger-die'] * 200).toLocaleString();
     if (crackRevenue) crackRevenue.textContent = (eventCounts['crack-me'] * 200).toLocaleString();
     if (codeRevenue) codeRevenue.textContent = (eventCounts['code-me'] * 200).toLocaleString();
-}
-
-// Update Analytics
-function updateAnalytics(registrations) {
-    // Destroy existing charts
-    if (collegeChart) collegeChart.destroy();
-    if (revenueChart) revenueChart.destroy();
-    if (yearChart) yearChart.destroy();
-    
-    // College chart
-    const ctx3 = document.getElementById('collegeChart');
-    if (ctx3) {
-        const collegeData = getTopCollegesData(registrations);
-        
-        collegeChart = new Chart(ctx3.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: collegeData.labels.slice(0, 5),
-                datasets: [{
-                    label: 'Students',
-                    data: collegeData.data.slice(0, 5),
-                    backgroundColor: '#00F5FF',
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#B8B8B8' }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#B8B8B8' }
-                    }
-                }
-            }
-        });
-    }
-    
-    // Payment methods
-    updatePaymentStats(registrations);
-    
-    // Department distribution
-    updateDepartmentList(registrations);
-    
-    // Revenue chart
-    const ctx4 = document.getElementById('revenueChart');
-    if (ctx4) {
-        const revenueData = getDailyRevenueData(registrations);
-        
-        revenueChart = new Chart(ctx4.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: revenueData.labels,
-                datasets: [{
-                    label: 'Revenue (₹)',
-                    data: revenueData.data,
-                    borderColor: '#00FF88',
-                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                    borderWidth: 3,
-                    pointRadius: 6,
-                    pointBackgroundColor: '#00FF88',
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: {
-                            color: '#B8B8B8',
-                            callback: function(value) {
-                                return '₹' + value.toLocaleString();
-                            }
-                        }
-                    },
-                    x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#B8B8B8' }
-                    }
-                }
-            }
-        });
-    }
-    
-    // Year-wise distribution
-    const ctx5 = document.getElementById('yearChart');
-    if (ctx5) {
-        const yearData = getYearWiseData(registrations);
-        
-        yearChart = new Chart(ctx5.getContext('2d'), {
-            type: 'pie',
-            data: {
-                labels: yearData.labels,
-                datasets: [{
-                    data: yearData.data,
-                    backgroundColor: ['#FF3366', '#00FF88', '#3366FF', '#FFB800', '#7B2FFF'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#B8B8B8',
-                            padding: 20
-                        }
-                    }
-                }
-            }
-        });
-    }
 }
 
 // Helper functions for analytics
@@ -1199,33 +1275,39 @@ function updatePaymentTransactions() {
 // Create mini chart for stats card
 function createMiniChart() {
     const ctx = document.getElementById('regMiniChart');
-    if (ctx) {
-        new Chart(ctx.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: ['', '', '', '', '', '', ''],
-                datasets: [{
-                    data: [12, 19, 15, 25, 22, 30, 28],
-                    borderColor: 'rgba(255, 255, 255, 0.8)',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.4,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: { display: false },
-                    y: { display: false }
-                }
-            }
-        });
+    if (!ctx || ctx.offsetParent === null) return;
+    
+    // Destroy existing mini chart
+    if (miniChart) {
+        miniChart.destroy();
+        miniChart = null;
     }
+    
+    miniChart = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: ['', '', '', '', '', '', ''],
+            datasets: [{
+                data: [12, 19, 15, 25, 22, 30, 28],
+                borderColor: 'rgba(255, 255, 255, 0.8)',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            }
+        }
+    });
 }
 
 // Fullscreen toggle
@@ -1360,6 +1442,18 @@ const styleSheet = document.createElement('style');
 styleSheet.textContent = additionalStyles;
 document.head.appendChild(styleSheet);
 
+// Initialize date range picker
+function initializeDatePickers() {
+    const today = new Date().toISOString().split('T')[0];
+    const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
+    
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
+    if (startDateInput) startDateInput.value = thirtyDaysAgo;
+    if (endDateInput) endDateInput.value = today;
+}
+
 // Export functions for global use
 window.viewRegistration = viewRegistration;
 window.editRegistration = editRegistration;
@@ -1370,6 +1464,33 @@ window.toggleFullscreen = toggleFullscreen;
 window.exportToCSV = exportToCSV;
 window.exportToPDF = exportToPDF;
 window.printRegistrations = printRegistrations;
+
+// Initialize everything after DOM load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDatePickers();
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + K for search focus
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const searchInput = document.getElementById('globalSearch') || document.getElementById('regSearch');
+            if (searchInput) searchInput.focus();
+        }
+        
+        // Escape to close modals
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(modal => {
+                modal.classList.remove('active');
+            });
+        }
+    });
+    
+    // Prevent multiple chart initializations
+    window.addEventListener('beforeunload', () => {
+        destroyAllCharts();
+    });
+});
 
 console.log('🛡️ Tecno Spark Admin Dashboard Loaded');
 console.log('📊 Dashboard initialized with dummy data');
