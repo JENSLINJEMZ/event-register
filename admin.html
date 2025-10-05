@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Tecno Spark 2024</title>
+    <link rel="stylesheet" href="admin-styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-bg">
+            <div class="cyber-grid"></div>
+        </div>
+        
+        <div class="login-box">
+            <div class="login-header">
+                <h1 class="login-title">
+                    <span class="title-main">ADMIN</span>
+                    <span class="title-accent">ACCESS</span>
+                </h1>
+                <p class="login-subtitle">Tecno Spark Control Center</p>
+            </div>
+            
+            <form class="login-form" id="loginForm">
+                <div class="auth-input-group">
+                    <input type="text" id="username" required>
+                    <label for="username">USERNAME</label>
+                    <div class="input-line"></div>
+                    <i class="input-icon fas fa-user"></i>
+                </div>
+                
+                <div class="auth-input-group">
+                    <input type="password" id="password" required>
+                    <label for="password">PASSWORD</label>
+                    <div class="input-line"></div>
+                    <i class="input-icon fas fa-lock"></i>
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    <span class="btn-text">ACCESS DASHBOARD</span>
+                    <span class="btn-loading"><i class="fas fa-circle-notch fa-spin"></i></span>
+                </button>
+                
+                <div class="login-footer">
+                    <p class="security-note">
+                        <i class="fas fa-shield-halved"></i>
+                        Secured Admin Portal
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="admin-dashboard" id="adminDashboard" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-section">
+                    <h2 class="logo">
+                        <span>TECNO</span>
+                        <span class="accent">SPARK</span>
+                    </h2>
+                    <span class="admin-badge">ADMIN</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#registrations" class="nav-item" data-section="registrations">
+                    <i class="fas fa-users"></i>
+                    <span>Registrations</span>
+                    <span class="nav-badge" id="regCount">0</span>
+                </a>
+                <a href="#events" class="nav-item" data-section="events">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Events</span>
+                </a>
+                <a href="#analytics" class="nav-item" data-section="analytics">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="#payments" class="nav-item" data-section="payments">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Payments</span>
+                </a>
+                <a href="#settings" class="nav-item" data-section="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="admin-profile">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="profile-info">
+                        <span class="profile-name">Admin User</span>
+                        <span class="profile-role">Super Admin</span>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="page-title" id="pageTitle">Dashboard Overview</h1>
+                </div>
+                
+                <div class="header-right">
+                    <div class="header-search">
+                        <input type="search" placeholder="Search..." id="globalSearch">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    
+                    <div class="header-actions">
+                        <button class="action-btn" id="refreshBtn">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="action-btn notification-btn">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                        <button class="action-btn" onclick="toggleFullscreen()">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="content-section active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card gradient-1">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-value" id="totalRegistrations">0</h3>
+                            <p class="stat-label">Total Registrations</p>
+                            <div class="stat-chart">
+                                <canvas id="regMiniChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card gradient-2">
+                        <div class="stat-icon">
+                            <i class="fas fa-rupee-sign"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-value">₹<span id="totalRevenue">0</span></h3>
+                            <p class="stat-label">Total Revenue</p>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up"></i> 15%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card gradient-3">
+                        <div class="stat-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-value" id="totalEvents">9</h3>
+                            <p class="stat-label">Total Events</p>
+                            <div class="stat-progress">
+                                <div class="progress-bar" style="width: 75%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card gradient-4">
+                        <div class="stat-icon">
+                            <i class="fas fa-university"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-value" id="totalColleges">0</h3>
+                            <p class="stat-label">Colleges Participating</p>
+                            <div class="stat-list" id="topColleges"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Registration Trends</h3>
+                            <div class="card-actions">
+                                <select class="chart-filter">
+                                    <option>Last 7 Days</option>
+                                    <option>Last 30 Days</option>
+                                    <option>All Time</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="registrationChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Event Distribution</h3>
+                            <div class="card-actions">
+                                <button class="chart-toggle" data-chart="pie">
+                                    <i class="fas fa-chart-pie"></i>
+                                </button>
+                                <button class="chart-toggle active" data-chart="doughnut">
+                                    <i class="fas fa-chart-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="eventChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="activity-section">
+                    <div class="section-header">
+                        <h3 class="section-title">Recent Activity</h3>
+                        <button class="view-all-btn">View All</button>
+                    </div>
+                    <div class="activity-timeline" id="activityTimeline">
+                        <!-- Activities will be dynamically added -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Registrations Section -->
+            <section id="registrationsSection" class="content-section">
+                <div class="section-controls">
+                    <div class="controls-left">
+                        <div class="search-box">
+                            <input type="search" placeholder="Search registrations..." id="regSearch">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <select id="eventFilter">
+                                <option value="">All Events</option>
+                                <option value="debugger-die">Debugger Die</option>
+                                <option value="crack-me">Crack Me</option>
+                                <option value="code-me">Code Me</option>
+                            </select>
+                            
+                            <select id="collegeFilter">
+                                <option value="">All Colleges</option>
+                            </select>
+                            
+                            <select id="paymentFilter">
+                                <option value="">All Payments</option>
+                                <option value="upi">UPI</option>
+                                <option value="card">Card</option>
+                                <option value="netbanking">Net Banking</option>
+                                <option value="wallet">Wallet</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="controls-right">
+                        <button class="export-btn" onclick="exportToCSV()">
+                            <i class="fas fa-download"></i>
+                            Export CSV
+                        </button>
+                        <button class="export-btn" onclick="exportToPDF()">
+                            <i class="fas fa-file-pdf"></i>
+                            Export PDF
+                        </button>
+                        <button class="print-btn" onclick="printRegistrations()">
+                            <i class="fas fa-print"></i>
+                            Print
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Registrations Table -->
+                <div class="data-table-container">
+                    <table class="data-table" id="registrationsTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="id">
+                                    Reg ID <i class="fas fa-sort"></i>
+                                </th>
+                                <th class="sortable" data-sort="name">
+                                    Name <i class="fas fa-sort"></i>
+                                </th>
+                                <th class="sortable" data-sort="email">
+                                    Email <i class="fas fa-sort"></i>
+                                </th>
+                                <th>Phone</th>
+                                <th class="sortable" data-sort="college">
+                                    College <i class="fas fa-sort"></i>
+                                </th>
+                                <th>Year</th>
+                                <th>Department</th>
+                                <th>Events</th>
+                                <th class="sortable" data-sort="amount">
+                                    Amount <i class="fas fa-sort"></i>
+                                </th>
+                                <th>Payment</th>
+                                <th class="sortable" data-sort="date">
+                                    Date <i class="fas fa-sort"></i>
+                                </th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="registrationsBody">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Showing <span id="showingFrom">1</span> to <span id="showingTo">10</span> 
+                        of <span id="totalRecords">0</span> entries
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="page-btn" id="prevPage">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div class="page-numbers" id="pageNumbers">
+                            <!-- Page numbers will be generated -->
+                        </div>
+                        <button class="page-btn" id="nextPage">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Events Section -->
+            <section id="eventsSection" class="content-section">
+                <div class="events-stats">
+                    <div class="event-stat-card">
+                        <div class="event-icon bug">
+                            <i class="fas fa-bug"></i>
+                        </div>
+                        <div class="event-info">
+                            <h3>Debugger Die</h3>
+                            <p class="event-participants"><span id="debuggerCount">0</span> Participants</p>
+                            <div class="event-revenue">₹<span id="debuggerRevenue">0</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="event-stat-card">
+                        <div class="event-icon shield">
+                            <i class="fas fa-shield-halved"></i>
+                        </div>
+                        <div class="event-info">
+                            <h3>Crack Me</h3>
+                            <p class="event-participants"><span id="crackCount">0</span> Participants</p>
+                            <div class="event-revenue">₹<span id="crackRevenue">0</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="event-stat-card">
+                        <div class="event-icon code">
+                            <i class="fas fa-laptop-code"></i>
+                        </div>
+                        <div class="event-info">
+                            <h3>Code Me</h3>
+                            <p class="event-participants"><span id="codeCount">0</span> Participants</p>
+                            <div class="event-revenue">₹<span id="codeRevenue">0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Management -->
+                <div class="event-management">
+                    <h3 class="section-subtitle">Event Management</h3>
+                    <div class="management-grid">
+                        <button class="management-btn">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Send Announcements</span>
+                        </button>
+                        <button class="management-btn">
+                            <i class="fas fa-users"></i>
+                            <span>Manage Teams</span>
+                        </button>
+                        <button class="management-btn">
+                            <i class="fas fa-clipboard-list"></i>
+                            <span>Generate Reports</span>
+                        </button>
+                        <button class="management-btn">
+                            <i class="fas fa-qrcode"></i>
+                            <span>QR Attendance</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analyticsSection" class="content-section">
+                <div class="analytics-header">
+                    <h2 class="analytics-title">Advanced Analytics</h2>
+                    <div class="date-range-picker">
+                        <input type="date" id="startDate">
+                        <span>to</span>
+                        <input type="date" id="endDate">
+                        <button class="apply-date">Apply</button>
+                    </div>
+                </div>
+
+                <div class="analytics-grid">
+                    <!-- College Distribution -->
+                    <div class="analytics-card">
+                        <h3 class="card-title">Top Participating Colleges</h3>
+                        <div class="college-chart-container">
+                            <canvas id="collegeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Payment Methods -->
+                    <div class="analytics-card">
+                        <h3 class="card-title">Payment Method Distribution</h3>
+                        <div class="payment-stats" id="paymentStats"></div>
+                    </div>
+
+                    <!-- Daily Revenue -->
+                    <div class="analytics-card full-width">
+                        <h3 class="card-title">Daily Revenue Trend</h3>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+
+                    <!-- Year-wise Distribution -->
+                    <div class="analytics-card">
+                        <h3 class="card-title">Year-wise Participation</h3>
+                        <canvas id="yearChart"></canvas>
+                    </div>
+
+                    <!-- Department Analysis -->
+                    <div class="analytics-card">
+                        <h3 class="card-title">Department Distribution</h3>
+                        <div class="department-list" id="departmentList"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Payments Section -->
+            <section id="paymentsSection" class="content-section">
+                <div class="payments-summary">
+                    <div class="payment-summary-card">
+                        <h4>Total Collected</h4>
+                        <p class="amount success">₹<span id="totalCollected">0</span></p>
+                    </div>
+                    <div class="payment-summary-card">
+                        <h4>Pending</h4>
+                        <p class="amount warning">₹<span id="pendingAmount">0</span></p>
+                    </div>
+                    <div class="payment-summary-card">
+                        <h4>Refunded</h4>
+                        <p class="amount danger">₹<span id="refundedAmount">0</span></p>
+                    </div>
+                </div>
+
+                <div class="payment-transactions">
+                    <h3 class="section-subtitle">Recent Transactions</h3>
+                    <div class="transactions-table">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Transaction ID</th>
+                                    <th>Registration ID</th>
+                                    <th>Name</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody">
+                                <!-- Transactions will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settingsSection" class="content-section">
+                <div class="settings-container">
+                    <div class="settings-sidebar">
+                        <nav class="settings-nav">
+                            <a href="#general" class="settings-nav-item active">
+                                <i class="fas fa-cog"></i> General
+                            </a>
+                            <a href="#security" class="settings-nav-item">
+                                <i class="fas fa-shield-alt"></i> Security
+                            </a>
+                            <a href="#notifications" class="settings-nav-item">
+                                <i class="fas fa-bell"></i> Notifications
+                            </a>
+                            <a href="#backup" class="settings-nav-item">
+                                <i class="fas fa-database"></i> Backup
+                            </a>
+                        </nav>
+                    </div>
+
+                    <div class="settings-content">
+                        <div class="settings-section" id="generalSettings">
+                            <h3>General Settings</h3>
+                            <div class="setting-item">
+                                <label>Event Registration Status</label>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label>Auto Send Confirmation Emails</label>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label>Registration Limit</label>
+                                <input type="number" value="1000" class="setting-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="viewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Registration Details</h3>
+                <button class="modal-close" onclick="closeModal('viewModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="admin-script.js"></script>
+</body>
+</html>
